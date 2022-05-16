@@ -38,11 +38,12 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
                     var reply = new Ping().Send(point.Address, p.Timeout);
                     if (reply.Status == IPStatus.Success)
                         dic[point.Name] = reply.RoundtripTime;
-                    dic[point.Name + "-Status"] = reply.Status + "";
+                    if (p.RetrieveStatus)
+                        dic[point.Name + "-Status"] = reply.Status + "";
                 }
                 catch (Exception ex)
                 {
-                    dic[point.Name + "-Status"] = ex.Message;
+                    dic[point.Name + "-Status"] = ex.GetTrue().Message;
                 }
             }
         }

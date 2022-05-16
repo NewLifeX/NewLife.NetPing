@@ -17,8 +17,8 @@ var point = new PointModel
 };
 var point2 = new PointModel
 {
-    Name = "feifan",
-    Address = "iot.feifan.link",
+    Name = "google",
+    Address = "google.com",
     Type = "Int32",
 };
 
