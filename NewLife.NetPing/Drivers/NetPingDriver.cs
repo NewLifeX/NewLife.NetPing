@@ -50,5 +50,50 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
 
         return dic;
     }
+
+    /// <summary>
+    /// 发现本地节点
+    /// </summary>
+    /// <returns></returns>
+    public override IPoint[] GetDefaultPoints()
+    {
+        var points = new List<IPoint>();
+
+        // 所有网关地址和DNS地址
+        var gaddrs = new List<String>();
+        var daddrs = new List<String>();
+        var gi = 1;
+        var di = 1;
+        foreach (var item in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            var ipps = item.GetIPProperties();
+            foreach (var elm in ipps.GatewayAddresses)
+            {
+                var ip = elm.Address + "";
+                if (!gaddrs.Contains(ip))
+                {
+                    var name = "Gateway";
+                    if (gi > 1) name += gi++;
+                    points.Add(new PointModel { Name = name, Address = ip, Type = "int", Length = 4 });
+                    gaddrs.Add(ip);
+                }
+            }
+            foreach (var elm in ipps.DnsAddresses)
+            {
+                if (!elm.IsIPv4()) continue;
+
+                var ip = elm + "";
+                if (!daddrs.Contains(ip))
+                {
+                    var name = "Dns";
+                    if (di > 1) name += di++;
+                    points.Add(new PointModel { Name = name, Address = ip, Type = "int", Length = 4 });
+                    daddrs.Add(ip);
+                }
+            }
+        }
+
+        return points.ToArray();
+    }
     #endregion
 }

@@ -7,6 +7,13 @@ XTrace.UseConsole();
 
 var driver = new NetPingDriver();
 var pm = new NetPingParameter();
+
+var points = driver.GetDefaultPoints();
+foreach (var item in points)
+{
+    XTrace.WriteLine("{0}={1}", item.Name, item.Address);
+}
+
 var node = driver.Open(null, pm);
 
 var point = new PointModel
