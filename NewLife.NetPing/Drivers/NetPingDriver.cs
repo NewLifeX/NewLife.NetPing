@@ -58,6 +58,7 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
     {
         var spec = new ThingSpec();
         var points = new List<PropertySpec>();
+        var extends = new List<PropertyExtend>();
 
         // 所有网关地址和DNS地址
         var gaddrs = new List<String>();
@@ -74,9 +75,10 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
                 {
                     var name = "Gateway";
                     if (gi > 1) name += gi++;
-                    var ps = Create(name, $"{item.Name}网关", "int", 0, ip);
+                    var ps = PropertySpec.Create(name, $"{item.Name}网关", "int", 0);
                     ps.DataType.Specs = new DataSpecs { Unit = "ms", UnitName = "毫秒" };
                     points.Add(ps);
+                    extends.Add(new PropertyExtend { Id = name, Address = ip });
                     gaddrs.Add(ip);
                 }
             }
@@ -89,9 +91,10 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
                 {
                     var name = "Dns";
                     if (di > 1) name += di++;
-                    var ps = Create(name, $"{item.Name}DNS", "int", 0, ip);
+                    var ps = PropertySpec.Create(name, $"{item.Name}DNS", "int", 0);
                     ps.DataType.Specs = new DataSpecs { Unit = "ms", UnitName = "毫秒" };
                     points.Add(ps);
+                    extends.Add(new PropertyExtend { Id = name, Address = ip });
                     daddrs.Add(ip);
                 }
             }
@@ -100,33 +103,6 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
         spec.Properties = points.ToArray();
 
         return spec;
-    }
-
-    /// <summary>快速创建属性</summary>
-    /// <param name="id">标识</param>
-    /// <param name="name">名称</param>
-    /// <param name="type">类型</param>
-    /// <param name="length">长度</param>
-    /// <param name="address">点位地址</param>
-    /// <returns></returns>
-    public static PropertySpec Create(String id, String name, String type, Int32 length = 0, String address = null)
-    {
-        var ps = new PropertySpec
-        {
-            Id = id,
-            Name = name,
-            Address = address
-        };
-
-        if (type != null)
-        {
-            ps.DataType = new TypeSpec { Type = type };
-
-            if (length > 0)
-                ps.DataType.Specs = new DataSpecs { Length = length };
-        }
-
-        return ps;
     }
     #endregion
 }
