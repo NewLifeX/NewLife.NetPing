@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Net.NetworkInformation;
+using System.Reflection;
 using NewLife.IoT.Drivers;
 using NewLife.IoT.ThingModels;
 using NewLife.IoT.ThingSpecification;
@@ -56,7 +57,16 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
     /// <returns></returns>
     public override ThingSpec GetSpecification()
     {
-        var spec = new ThingSpec();
+        var type = GetType();
+        var spec = new ThingSpec
+        {
+            Profile = new Profile
+            {
+                Version = type.Assembly.GetName().Version + "",
+                ProductKey = type.GetCustomAttribute<DriverAttribute>().Name
+            }
+        };
+
         var points = new List<PropertySpec>();
         var extends = new List<PropertyExtend>();
 
