@@ -4,7 +4,7 @@
     <AssemblyTitle>设备网络心跳驱动</AssemblyTitle>
     <Description>IoT驱动，通过Ping探测到目标设备的网络情况，并收集延迟数据</Description>
     <Company>新生命开发团队</Company>
-    <Copyright>©2002-2024 新生命开发团队</Copyright>
+    <Copyright>©2002-2025 新生命开发团队</Copyright>
     <VersionPrefix>1.1</VersionPrefix>
     <VersionSuffix>$([System.DateTime]::Now.ToString(`yyyy.MMdd`))</VersionSuffix>
     <Version>$(VersionPrefix).$(VersionSuffix)</Version>
