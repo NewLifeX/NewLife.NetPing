@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Net.NetworkInformation;
-using System.Reflection;
 using NewLife.IoT.Drivers;
 using NewLife.IoT.ThingModels;
 using NewLife.IoT.ThingSpecification;
@@ -18,19 +17,20 @@ namespace NewLife.NetPing.Drivers;
 public class NetPingDriver : DriverBase<Node, NetPingParameter>
 {
     #region 方法
-    /// <summary>
-    /// 读取数据
-    /// </summary>
+    /// <summary>读取数据</summary>
     /// <param name="node">节点对象，可存储站号等信息，仅驱动自己识别</param>
     /// <param name="points">点位集合，Address属性地址示例：D100、C100、W100、H100</param>
-    /// <returns></returns>
-    public override IDictionary<String, Object> Read(INode node, IPoint[] points)
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>读取结果，包含点位数据、质量码和可选诊断帧</returns>
+    public override Task<ReadResult> ReadAsync(INode node, IPoint[] points, CancellationToken cancellationToken = default)
     {
-        var dic = new Dictionary<String, Object>();
-
-        if (points == null || points.Length == 0) return dic;
+        if (points == null || points.Length == 0)
+            return TaskEx.FromResult(ReadResult.Success([], []));
 
         var p = node.Parameter as NetPingParameter;
+        var resultPoints = new List<IPoint>();
+        var resultValues = new List<Object?>();
+
         foreach (var point in points)
         {
             if (!point.Address.IsNullOrEmpty())
@@ -39,36 +39,33 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
                 {
                     var reply = new Ping().Send(point.Address, p.Timeout);
                     if (reply.Status == IPStatus.Success)
-                        dic[point.Name] = reply.RoundtripTime;
+                    {
+                        resultPoints.Add(point);
+                        resultValues.Add(reply.RoundtripTime);
+                    }
                     if (p.RetrieveStatus)
-                        dic[point.Name + "-Status"] = reply.Status + "";
+                    {
+                        resultPoints.Add(point);
+                        resultValues.Add(reply.Status + "");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    dic[point.Name + "-Status"] = ex.GetTrue().Message;
+                    resultPoints.Add(point);
+                    resultValues.Add(ex.GetTrue().Message);
                 }
             }
         }
 
-        return dic;
+        return TaskEx.FromResult(ReadResult.Success(resultPoints.ToArray(), resultValues.ToArray()));
     }
 
-    /// <summary>发现本地节点</summary>
-    /// <returns></returns>
-    public override ThingSpec GetSpecification()
+    /// <summary>填充产品物模型（发现本地网关和DNS点位）</summary>
+    /// <param name="thingSpec">待填充的物模型对象</param>
+    /// <returns>是否填充成功</returns>
+    protected override Boolean OnGetSpecification(ThingSpec thingSpec)
     {
-        var type = GetType();
-        var spec = new ThingSpec
-        {
-            Profile = new Profile
-            {
-                Version = type.Assembly.GetName().Version + "",
-                ProductKey = type.GetCustomAttribute<DriverAttribute>().Name
-            }
-        };
-
         var points = new List<PropertySpec>();
-        //var extends = new List<PropertyExtend>();
 
         // 所有网关地址和DNS地址
         var gaddrs = new List<String>();
@@ -88,7 +85,6 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
                     var ps = PropertySpec.Create(name, $"{item.Name}网关", "int", 0, ip);
                     ps.DataType.Specs = new DataSpecs { Unit = "ms", UnitName = "毫秒" };
                     points.Add(ps);
-                    //extends.Add(new PropertyExtend { Id = name, Address = ip });
                     gaddrs.Add(ip);
                 }
             }
@@ -104,15 +100,14 @@ public class NetPingDriver : DriverBase<Node, NetPingParameter>
                     var ps = PropertySpec.Create(name, $"{item.Name}DNS", "int", 0, ip);
                     ps.DataType.Specs = new DataSpecs { Unit = "ms", UnitName = "毫秒" };
                     points.Add(ps);
-                    //extends.Add(new PropertyExtend { Id = name, Address = ip });
                     daddrs.Add(ip);
                 }
             }
         }
 
-        spec.Properties = points.ToArray();
+        thingSpec.Properties = points.ToArray();
 
-        return spec;
+        return points.Count > 0;
     }
     #endregion
 }
