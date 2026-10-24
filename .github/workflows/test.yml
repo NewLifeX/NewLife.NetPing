@@ -7,10 +7,13 @@ on:
     branches: [ '*' ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-test:
-
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
     - uses: actions/checkout@v4
@@ -18,12 +21,16 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
-          6.x
-          7.x
           8.x
-          9.x
           10.x
+        cache: true
+        cache-dependency-path: '**/*.csproj'
+    - name: Restore
+      run: dotnet restore NewLife.NetPing.slnx
     - name: Build
-      run: dotnet build -c Release
+      run: dotnet build NewLife.NetPing.slnx -c Release --no-restore
     - name: Test
-      run: dotnet test -c Release
+      run: dotnet test NewLife.NetPing.slnx -c Release --no-build --verbosity normal
+    - name: Pack
+      # 打包校验：确保 PackageReadmeFile、图标与多目标框架在干净环境可产出 nupkg
+      run: dotnet pack NewLife.NetPing/NewLife.NetPing.csproj -c Release -o out
